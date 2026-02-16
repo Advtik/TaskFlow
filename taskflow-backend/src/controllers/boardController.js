@@ -1,6 +1,7 @@
 import { db } from "../db/connect.js";
 import { query } from "../utils/query.js";
 import { logActivity } from "../utils/activityLogger.js";
+import { io } from "../../server.js";
 
 
 export const createBoard = async (req, res, next) => {
@@ -193,6 +194,11 @@ export const addBoardMember = async (req, res, next) => {
       `,
       [boardId, userId, role || "member"]
     );
+
+    io.to(boardId).emit("memberAdded", {
+      userId
+    });
+
 
     await logActivity({
         boardId: boardId,

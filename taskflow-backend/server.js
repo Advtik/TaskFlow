@@ -1,13 +1,38 @@
 import dotenv from "dotenv";
+
 dotenv.config();
 
 import http from "http";
 import app from "./src/index.js";
 import { db } from "./src/db/connect.js";
+import { Server } from "socket.io";
 
 const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
+
+//Socket.IO server
+export const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+  }
+});
+
+// 🔥 Socket connection logic
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("joinBoard", (boardId) => {
+    socket.join(boardId);
+    console.log(`Socket ${socket.id} joined board ${boardId}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
 
 // Check DB before starting server
 db.query("SELECT NOW()")

@@ -1,6 +1,8 @@
 import { query } from "../utils/query.js";
 import { db } from "../db/connect.js";
 import { logActivity } from "../utils/activityLogger.js";
+import { io } from "../../server.js";
+
 
 
 export const createTask = async (req, res, next) => {
@@ -68,6 +70,9 @@ export const createTask = async (req, res, next) => {
         userId,
       ]
     );
+
+    io.to(boardId).emit("taskCreated", result.rows[0]);
+
 
     await logActivity({
         boardId: boardId,
@@ -386,6 +391,14 @@ export const moveTask = async (req, res, next) => {
 
     await client.query("COMMIT");
 
+    io.to(boardId).emit("taskMoved", {
+      taskId,
+      sourceListId,
+      targetListId,
+      newPosition
+    });
+
+
     await logActivity({
         boardId: boardId,
         userId: userId,
@@ -485,6 +498,12 @@ export const assignUserToTask = async (req, res, next) => {
       `,
       [taskId, userId]
     );
+
+    io.to(boardId).emit("taskAssigned", {
+      taskId,
+      userId
+    });
+
 
     await logActivity({
         boardId: boardId,
@@ -624,6 +643,80 @@ export const getTaskAssignees = async (req, res, next) => {
     res.json({
       success: true,
       assignees: assignees.rows,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+export const searchTasks = async (req, res, next) => {
+  try {
+    const { boardId, query: searchQuery, page = 1, limit = 10 } = req.query;
+    const userId = req.user.id;
+
+    if (!boardId) {
+      return res.status(400).json({
+        success: false,
+        message: "boardId is required",
+      });
+    }
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    // 1️⃣ Check membership
+    const membership = await query(
+      "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
+      [boardId, userId]
+    );
+
+    if (membership.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    const searchTerm = `%${searchQuery || ""}%`;
+
+    // 2️⃣ Get total count
+    const countResult = await query(
+      `
+      SELECT COUNT(*) 
+      FROM tasks t
+      JOIN lists l ON t.list_id = l.id
+      WHERE l.board_id = $1
+      AND (t.title ILIKE $2 OR t.description ILIKE $2)
+      `,
+      [boardId, searchTerm]
+    );
+
+    const total = parseInt(countResult.rows[0].count);
+
+    // 3️⃣ Fetch paginated results
+    const tasks = await query(
+      `
+      SELECT t.*
+      FROM tasks t
+      JOIN lists l ON t.list_id = l.id
+      WHERE l.board_id = $1
+      AND (t.title ILIKE $2 OR t.description ILIKE $2)
+      ORDER BY t.created_at DESC
+      LIMIT $3 OFFSET $4
+      `,
+      [boardId, searchTerm, limitNum, offset]
+    );
+
+    res.json({
+      success: true,
+      page: pageNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+      tasks: tasks.rows,
     });
 
   } catch (error) {
