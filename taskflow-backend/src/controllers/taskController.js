@@ -160,7 +160,7 @@ export const updateTask = async (req, res, next) => {
 
     // 1️⃣ Get task
     const taskResult = await query(
-      "SELECT list_id FROM tasks WHERE id = $1",
+      "SELECT * FROM tasks WHERE id = $1",
       [taskId]
     );
 
@@ -191,6 +191,15 @@ export const updateTask = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: "Access denied",
+      });
+    }
+
+    const task = taskResult.rows[0];
+     // 🔥 Permission check
+    if (task.created_by !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to modify this task"
       });
     }
 
@@ -230,9 +239,10 @@ export const deleteTask = async (req, res, next) => {
     const { taskId } = req.params;
     const userId = req.user.id;
 
+
     // 1️⃣ Get task
     const taskResult = await query(
-      "SELECT list_id FROM tasks WHERE id = $1",
+      "SELECT * FROM tasks WHERE id = $1",
       [taskId]
     );
 
@@ -271,6 +281,15 @@ export const deleteTask = async (req, res, next) => {
     "SELECT title FROM tasks WHERE id = $1",
     [taskId]
     );
+
+    const task = taskResult.rows[0];
+    // 🔥 Permission check
+    if (task.created_by !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this task"
+      });
+    }
 
     // 4️⃣ Delete task
     await query(

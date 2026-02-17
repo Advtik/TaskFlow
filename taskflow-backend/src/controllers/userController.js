@@ -1,3 +1,7 @@
+import { query } from "../utils/query.js";
+import { db } from "../db/connect.js";
+import { logActivity } from "../utils/activityLogger.js";
+
 export const searchUsers = async (req, res, next) => {
   try {
     const { query: searchQuery = "", page = 1, limit = 10 } = req.query;

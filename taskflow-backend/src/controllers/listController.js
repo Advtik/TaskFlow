@@ -1,4 +1,5 @@
 import { query } from "../utils/query.js";
+import { logActivity } from "../utils/activityLogger.js";
 
 export const createList = async (req, res, next) => {
   try {
@@ -201,11 +202,11 @@ export const deleteList = async (req, res, next) => {
     );
 
     await logActivity({
-        boardId: boardId,
+        boardId: list.board_id,
         userId: userId,
         actionType: "LIST_DELETED",
         entityType: "list",
-        entityId: listId,
+        entityId: list.id,
         metadata: {
             title: listInfo.rows[0]?.title
         }

@@ -14,10 +14,11 @@ const server = http.createServer(app);
 //Socket.IO server
 export const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    origin: process.env.FRONTEND_URL,
+    credentials: true
   }
 });
+
 
 // 🔥 Socket connection logic
 io.on("connection", (socket) => {
@@ -26,6 +27,11 @@ io.on("connection", (socket) => {
   socket.on("joinBoard", (boardId) => {
     socket.join(boardId);
     console.log(`Socket ${socket.id} joined board ${boardId}`);
+  });
+
+  socket.on("leaveBoard", (boardId) => {
+    socket.leave(boardId);
+    console.log(`Socket ${socket.id} left board ${boardId}`);
   });
 
   socket.on("disconnect", () => {

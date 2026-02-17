@@ -5,10 +5,17 @@ import boardRoutes from "./routes/boardRoutes.js";
 import listRoutes from "./routes/listRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from  "./routes/userRoutes.js";
+import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
 
 
 
 const app = express();
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true
+}));
 
 app.use(express.json());
 

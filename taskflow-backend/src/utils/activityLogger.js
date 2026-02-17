@@ -1,4 +1,5 @@
 import { query } from "./query.js";
+import { io } from "../../server.js";
 
 export const logActivity = async ({
   boardId,
@@ -8,19 +9,20 @@ export const logActivity = async ({
   entityId,
   metadata = {}
 }) => {
-  await query(
+  const result = await query(
     `
     INSERT INTO activities
     (board_id, user_id, action_type, entity_type, entity_id, metadata)
     VALUES ($1,$2,$3,$4,$5,$6)
+    RETURNING *
     `,
-    [
-      boardId,
-      userId,
-      actionType,
-      entityType,
-      entityId,
-      JSON.stringify(metadata)
-    ]
+    [boardId, userId, actionType, entityType, entityId, metadata]
   );
+
+  const activity = result.rows[0];
+
+  // 🔥 Emit to board room
+  io.to(boardId).emit("activity:new", activity);
+
+  return activity;
 };
