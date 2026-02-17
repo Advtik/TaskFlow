@@ -301,7 +301,7 @@ VITE_SERVER_URL=http://localhost:5000
 Start frontend:
 
 ```bash
-npm run dev
+npm run taskflow
 ```
 
 Open:
