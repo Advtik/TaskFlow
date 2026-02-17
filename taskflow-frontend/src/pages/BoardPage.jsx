@@ -26,7 +26,6 @@ import { arrayMove } from "@dnd-kit/sortable";
 
 import socket from "../socket";
 
-
 function BoardPage() {
   const { boardId } = useParams();
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ function BoardPage() {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [creatingForList, setCreatingForList] = useState(null);
-  const [activeTask, setActiveTask] = useState(null); // For smooth DragOverlay
+  const [activeTask, setActiveTask] = useState(null);
 
   // --- Fetching Data ---
   const fetchBoardData = useCallback(async () => {
@@ -65,9 +64,11 @@ function BoardPage() {
         const taskRes = await api.get(`/tasks/list/${list.id}`);
         tasksObj[list.id] = taskRes.data.tasks;
       }
+
       setTasksMap(tasksObj);
       setActivities(activityRes.data.activities);
       setMembers(memberRes.data.members);
+
     } catch (err) {
       console.error("Failed to load board", err);
     } finally {
@@ -79,68 +80,127 @@ function BoardPage() {
     fetchBoardData();
   }, [fetchBoardData]);
 
+  // --- Socket ---
   useEffect(() => {
-  socket.connect();
+    socket.connect();
+    socket.emit("joinBoard", boardId);
 
-  socket.emit("joinBoard", boardId);
+    socket.on("taskCreated", (task) => {
+      setTasksMap(prev => ({
+        ...prev,
+        [task.list_id]: [...(prev[task.list_id] || []), task]
+      }));
+    });
 
-  socket.on("taskCreated", (task) => {
-    setTasksMap(prev => ({
-      ...prev,
-      [task.list_id]: [...(prev[task.list_id] || []), task]
-    }));
+    socket.on("taskUpdated", (updatedTask) => {
+  setTasksMap(prev => {
+    const updated = { ...prev };
+
+    for (let listId in updated) {
+      updated[listId] = updated[listId].map(task =>
+        task.id === updatedTask.id ? updatedTask : task
+      );
+    }
+
+    return updated;
+  });
+});
+
+    socket.on("taskDeleted", ({ taskId, listId }) => {
+      setTasksMap(prev => ({
+        ...prev,
+        [listId]: prev[listId].filter(t => t.id !== taskId)
+      }));
+    });
+
+    socket.on("taskMoved", () => {
+      fetchBoardData();
+    });
+
+    socket.on("activity:new", (activity) => {
+      setActivities(prev => [activity, ...prev]);
+    });
+
+    socket.on("listCreated", (list) => {
+  setLists(prev => {
+    if (prev.some(l => l.id === list.id)) return prev; // prevent duplicates
+    return [...prev, list];
   });
 
-  socket.on("taskDeleted", ({ taskId, listId }) => {
-    setTasksMap(prev => ({
-      ...prev,
-      [listId]: prev[listId].filter(t => t.id !== taskId)
-    }));
-  });
+  setTasksMap(prev => ({
+    ...prev,
+    [list.id]: []
+  }));
+});
 
-  socket.on("taskMoved", ({ taskId, sourceListId, targetListId, newPosition }) => {
-    fetchBoardData(); // easiest safe approach for now
-  });
+socket.on("listDeleted", (listId) => {
+  setLists(prev => prev.filter(l => l.id !== listId));
 
-  socket.on("taskAssigned", ({ taskId, userId }) => {
-    console.log("Task assigned:", taskId, userId);
+  setTasksMap(prev => {
+    const updated = { ...prev };
+    delete updated[listId];
+    return updated;
   });
+});
 
-  socket.on("activity:new", (activity) => {
-    setActivities(prev => [activity, ...prev]);
-  });
+    
 
-  socket.on("connect", () => {
-    console.log("Socket connected:", socket.id);
-  });
+    return () => {
+      socket.off("taskCreated");
+      socket.off("taskDeleted");
+      socket.off("taskMoved");
+      socket.off("taskUpdated");
 
-  return () => {
-    socket.off("taskCreated");
-    socket.off("taskDeleted");
-    socket.off("taskMoved");
-    socket.off("taskAssigned");
-    socket.off("activity:new");
-    socket.disconnect();
+      socket.off("activity:new");
+      socket.off("listCreated");
+socket.off("listDeleted");
+
+      socket.disconnect();
+    };
+  }, [boardId, fetchBoardData]);
+
+  // 🔥 ADD MEMBER
+  const addMember = async (userId) => {
+  try {
+    await api.post(`/boards/${boardId}/members`, { userId });
+
+    // 🔥 Refetch correct joined data
+    const memberRes = await api.get(`/boards/${boardId}/members`);
+    setMembers(memberRes.data.members);
+
+  } catch (err) {
+    if (err.response?.status === 409) {
+      alert("User is already a member.");
+    } else {
+      console.error("Failed to add member", err);
+      alert("Could not add member.");
+    }
+  }
+};
+
+
+  // 🔥 REMOVE MEMBER
+  const removeMember = async (userId) => {
+    try {
+      await api.delete(`/boards/${boardId}/members/${userId}`);
+      setMembers(prev => prev.filter(m => m.id !== userId));
+    } catch (err) {
+      console.error("Failed to remove member", err);
+      alert("Could not remove member.");
+    }
   };
-}, [boardId]);
-
-
-
 
   // --- DND Sensors ---
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Fixes the click vs drag conflict
-      },
+      activationConstraint: { distance: 8 },
     })
   );
 
-  // --- Drag Logic ---
   const handleDragStart = (event) => {
     const { active } = event;
-    // Find the task object being dragged to show in the Overlay
     let taskFound = null;
+
     for (const listId in tasksMap) {
       const task = tasksMap[listId].find((t) => t.id === active.id);
       if (task) {
@@ -148,12 +208,13 @@ function BoardPage() {
         break;
       }
     }
+
     setActiveTask(taskFound);
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    setActiveTask(null); // Hide the overlay card
+    setActiveTask(null);
     if (!over) return;
 
     const activeId = active.id;
@@ -162,14 +223,12 @@ function BoardPage() {
     let sourceListId = null;
     let targetListId = null;
 
-    // Find source
     for (let listId in tasksMap) {
       if (tasksMap[listId].some((t) => t.id === activeId)) {
         sourceListId = listId;
       }
     }
 
-    // Detect target
     if (overId.toString().startsWith("list-")) {
       targetListId = overId.replace("list-", "");
     } else {
@@ -193,8 +252,8 @@ function BoardPage() {
       newIndex = targetTasks.findIndex((t) => t.id === overId);
     }
 
-    // Local State Update
     const updated = { ...tasksMap };
+
     if (sourceListId === targetListId) {
       updated[sourceListId] = arrayMove(sourceTasks, oldIndex, newIndex);
     } else {
@@ -206,9 +265,9 @@ function BoardPage() {
         ...targetTasks.slice(newIndex),
       ];
     }
+
     setTasksMap(updated);
 
-    // Persist to API
     try {
       await api.patch(`/tasks/${activeId}/move`, {
         targetListId,
@@ -216,63 +275,66 @@ function BoardPage() {
       });
     } catch (err) {
       console.error("Move failed", err);
-      fetchBoardData(); // Revert on failure
+      fetchBoardData();
     }
   };
 
-  // --- CRUD Operations ---
   const createList = async (title) => {
-    const res = await api.post("/lists", { boardId, title });
-    setLists((prev) => [...prev, res.data.list]);
-    setTasksMap((prev) => ({ ...prev, [res.data.list.id]: [] }));
+    await api.post("/lists", { boardId, title });
+    
   };
 
   const deleteList = async (listId) => {
     if (!window.confirm("Delete this entire list?")) return;
-    setLists((prev) => prev.filter((l) => l.id !== listId));
+    setLists(prev => prev.filter(l => l.id !== listId));
     await api.delete(`/lists/${listId}`);
   };
 
-  const deleteTask = async (taskId, listId) => {
-  if (!window.confirm("Delete this task?")) return;
+  const updateTask = (updatedTask) => {
+  setTasksMap(prev => {
+    const updated = { ...prev };
 
-  try {
-    await api.delete(`/tasks/${taskId}`);
-
-    // Only remove from UI AFTER success
-    setTasksMap(prev => ({
-      ...prev,
-      [listId]: prev[listId].filter(t => t.id !== taskId),
-    }));
-
-  } catch (err) {
-    if (err.response?.status === 403) {
-      alert("You are not allowed to delete this task.");
-    } else {
-      alert("Something went wrong while deleting.");
+    for (let listId in updated) {
+      updated[listId] = updated[listId].map(task =>
+        task.id === updatedTask.id ? updatedTask : task
+      );
     }
-  }
+
+    return updated;
+  });
 };
 
-  // --- Loading State ---
+
+  const deleteTask = async (taskId, listId) => {
+    if (!window.confirm("Delete this task?")) return;
+
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      setTasksMap(prev => ({
+        ...prev,
+        [listId]: prev[listId].filter(t => t.id !== taskId),
+      }));
+    } catch (err) {
+      alert("Something went wrong while deleting.");
+    }
+  };
+
   if (loading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-slate-50 space-y-4">
-        <div className="w-12 h-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
-        <p className="text-slate-500 font-bold animate-pulse uppercase tracking-widest text-xs">
-          Loading Workspace...
-        </p>
+      <div className="h-screen flex items-center justify-center">
+        Loading Workspace...
       </div>
     );
   }
 
-  // --- Main Render ---
   return (
     <div className="h-screen flex flex-col bg-[#f8fafc] overflow-hidden font-sans">
       <BoardHeader
         title={boardTitle}
         onBack={() => navigate("/dashboard")}
         onShowMembers={() => setShowMembersModal(true)}
+        onAddMember={addMember}   // 🔥 ADD THIS
+        members={members}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -297,40 +359,31 @@ function BoardPage() {
                   onDeleteList={deleteList}
                 />
               ))}
-
-              <div className="h-20" />
             </div>
 
-            {/* 🔥 This is what makes DND smooth */}
-            <DragOverlay
-              dropAnimation={{
-                sideEffects: defaultDropAnimationSideEffects({
-                  styles: { active: { opacity: "0.5" } },
-                }),
-              }}
-            >
+            <DragOverlay>
               {activeTask ? (
                 <SortableTask
                   task={activeTask}
                   listId={activeTask.listId}
-                  isOverlay={true}
+                  isOverlay
                 />
               ) : null}
             </DragOverlay>
           </DndContext>
         </main>
 
-        <aside className="hidden xl:block w-96 border-l border-slate-200 bg-white">
+        <aside className="hidden xl:block w-96 border-l bg-white">
           <ActivityPanel activities={activities} />
         </aside>
       </div>
 
-      {/* Modals */}
       {showMembersModal && (
         <BoardMembersModal
           members={members}
           onClose={() => setShowMembersModal(false)}
-          onRemove={(uid) => console.log("Remove logic here", uid)}
+          onRemove={removeMember}
+          onAddMember={addMember}
         />
       )}
 
@@ -339,23 +392,27 @@ function BoardPage() {
           listId={creatingForList}
           members={members}
           onClose={() => setCreatingForList(null)}
-          onCreated={(task) =>
-            setTasksMap((prev) => ({
-              ...prev,
-              [creatingForList]: [...(prev[creatingForList] || []), task],
-            }))
-          }
         />
       )}
 
       {selectedTask && (
-        <TaskModal
-          task={selectedTask}
-          listId={selectedTask.listId}
-          members={members}
-          onClose={() => setSelectedTask(null)}
-        />
-      )}
+  <TaskModal
+    task={selectedTask}
+    listId={selectedTask.listId}
+    members={members}
+    onClose={() => setSelectedTask(null)}
+    onUpdated={updateTask}
+    onDeleted={(taskId) => {
+      setTasksMap(prev => {
+        const updated = { ...prev };
+        updated[selectedTask.listId] =
+          updated[selectedTask.listId].filter(t => t.id !== taskId);
+        return updated;
+      });
+    }}
+  />
+)}
+
     </div>
   );
 }

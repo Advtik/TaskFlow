@@ -222,6 +222,22 @@ export const updateTask = async (req, res, next) => {
       ]
     );
 
+    const updatedTask = updated.rows[0];
+
+    io.to(boardId).emit("taskUpdated", updatedTask);
+
+    await logActivity({
+  boardId: boardId,
+  userId: userId,
+  actionType: "TASK_UPDATED",
+  entityType: "task",
+  entityId: taskId,
+  metadata: {
+    title: updatedTask.title
+  }
+});
+
+
     res.json({
       success: true,
       task: updated.rows[0],
@@ -296,6 +312,11 @@ export const deleteTask = async (req, res, next) => {
       "DELETE FROM tasks WHERE id = $1",
       [taskId]
     );
+
+    io.to(boardId).emit("taskDeleted", {
+  taskId,
+  listId
+});
 
     await logActivity({
         boardId: boardId,

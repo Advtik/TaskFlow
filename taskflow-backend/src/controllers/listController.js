@@ -1,5 +1,7 @@
 import { query } from "../utils/query.js";
 import { logActivity } from "../utils/activityLogger.js";
+import { io } from "../../server.js";
+
 
 export const createList = async (req, res, next) => {
   try {
@@ -39,6 +41,11 @@ export const createList = async (req, res, next) => {
       "INSERT INTO lists (board_id, title, position) VALUES ($1,$2,$3) RETURNING *",
       [boardId, title, newPosition]
     );
+    
+     const newList = result.rows[0];
+
+    // ✅ REALTIME EMIT
+    io.to(boardId).emit("listCreated", newList);
 
     await logActivity({
         boardId: boardId,
@@ -200,6 +207,9 @@ export const deleteList = async (req, res, next) => {
       "DELETE FROM lists WHERE id = $1",
       [id]
     );
+
+    io.to(list.board_id).emit("listDeleted", id);
+
 
     await logActivity({
         boardId: list.board_id,
