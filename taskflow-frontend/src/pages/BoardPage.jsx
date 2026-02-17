@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
-// Components
 import BoardHeader from "../components/board/BoardHeader";
 import ListSection, { SortableTask } from "../components/board/ListSection";
 import ActivityPanel from "../components/board/ActivityPanel";
@@ -10,7 +9,6 @@ import BoardMembersModal from "../components/board/BoardMembersModal";
 import AddList from "../components/board/AddList";
 import TaskModal from "../components/board/TaskModal";
 
-// DND Kit Core
 import {
   DndContext,
   closestCenter,
@@ -21,7 +19,6 @@ import {
   defaultDropAnimationSideEffects,
 } from "@dnd-kit/core";
 
-// DND Kit Helpers
 import { arrayMove } from "@dnd-kit/sortable";
 
 import socket from "../socket";
@@ -30,7 +27,6 @@ function BoardPage() {
   const { boardId } = useParams();
   const navigate = useNavigate();
 
-  // --- State ---
   const [boardTitle, setBoardTitle] = useState("");
   const [lists, setLists] = useState([]);
   const [tasksMap, setTasksMap] = useState({});
@@ -38,13 +34,11 @@ function BoardPage() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // UI State
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [creatingForList, setCreatingForList] = useState(null);
   const [activeTask, setActiveTask] = useState(null);
 
-  // --- Fetching Data ---
   const fetchBoardData = useCallback(async () => {
     try {
       setLoading(true);
@@ -80,7 +74,6 @@ function BoardPage() {
     fetchBoardData();
   }, [fetchBoardData]);
 
-  // --- Socket ---
   useEffect(() => {
     socket.connect();
     socket.emit("joinBoard", boardId);
@@ -159,12 +152,10 @@ socket.off("listDeleted");
     };
   }, [boardId, fetchBoardData]);
 
-  // 🔥 ADD MEMBER
   const addMember = async (userId) => {
   try {
     await api.post(`/boards/${boardId}/members`, { userId });
 
-    // 🔥 Refetch correct joined data
     const memberRes = await api.get(`/boards/${boardId}/members`);
     setMembers(memberRes.data.members);
 
@@ -179,7 +170,6 @@ socket.off("listDeleted");
 };
 
 
-  // 🔥 REMOVE MEMBER
   const removeMember = async (userId) => {
     try {
       await api.delete(`/boards/${boardId}/members/${userId}`);
@@ -190,7 +180,6 @@ socket.off("listDeleted");
     }
   };
 
-  // --- DND Sensors ---
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -333,7 +322,7 @@ socket.off("listDeleted");
         title={boardTitle}
         onBack={() => navigate("/dashboard")}
         onShowMembers={() => setShowMembersModal(true)}
-        onAddMember={addMember}   // 🔥 ADD THIS
+        onAddMember={addMember}   
         members={members}
       />
 

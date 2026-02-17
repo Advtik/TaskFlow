@@ -79,7 +79,6 @@ export const getSingleBoard = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Check membership
     const membership = await query(
       `
       SELECT * FROM board_members
@@ -95,7 +94,6 @@ export const getSingleBoard = async (req, res, next) => {
       });
     }
 
-    // Fetch board
     const boardResult = await query(
       "SELECT * FROM boards WHERE id = $1",
       [id]
@@ -133,7 +131,6 @@ export const addBoardMember = async (req, res, next) => {
       });
     }
 
-    // 1️⃣ Check current user membership + role
     const currentMember = await query(
       `
       SELECT role FROM board_members
@@ -156,7 +153,6 @@ export const addBoardMember = async (req, res, next) => {
       });
     }
 
-    // 2️⃣ Check target user exists
     const userExists = await query(
       "SELECT id FROM users WHERE id = $1",
       [userId]
@@ -169,7 +165,6 @@ export const addBoardMember = async (req, res, next) => {
       });
     }
 
-    // 3️⃣ Check if already member
     const alreadyMember = await query(
       `
       SELECT id FROM board_members
@@ -185,7 +180,6 @@ export const addBoardMember = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Insert member
     const result = await query(
       `
       INSERT INTO board_members (board_id, user_id, role)
@@ -228,7 +222,6 @@ export const removeBoardMember = async (req, res, next) => {
     const { boardId, userId } = req.params;
     const currentUserId = req.user.id;
 
-    // 1️⃣ Check current user role
     const currentMember = await query(
       `
       SELECT role FROM board_members
@@ -251,7 +244,6 @@ export const removeBoardMember = async (req, res, next) => {
       });
     }
 
-    // 2️⃣ Check target exists in board
     const targetMember = await query(
       `
       SELECT role FROM board_members
@@ -267,7 +259,6 @@ export const removeBoardMember = async (req, res, next) => {
       });
     }
 
-    // 3️⃣ Prevent removing last admin
     if (targetMember.rows[0].role === "admin") {
       const adminCount = await query(
         `
@@ -285,7 +276,6 @@ export const removeBoardMember = async (req, res, next) => {
       }
     }
 
-    // 4️⃣ Delete member
     await query(
       `
       DELETE FROM board_members
@@ -322,7 +312,6 @@ export const getBoardMembers = async (req, res, next) => {
     const { boardId } = req.params;
     const userId = req.user.id;
 
-    // 1️⃣ Check membership
     const membership = await query(
       `
       SELECT id FROM board_members
@@ -338,7 +327,6 @@ export const getBoardMembers = async (req, res, next) => {
       });
     }
 
-    // 2️⃣ Fetch members
     const result = await query(
       `
       SELECT 
@@ -373,7 +361,6 @@ export const getBoardActivity = async (req, res, next) => {
     const { boardId } = req.params;
     const userId = req.user.id;
 
-    // Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]

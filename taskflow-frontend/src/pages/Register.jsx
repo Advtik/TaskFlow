@@ -83,7 +83,6 @@ function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              {/* Simple strength indicator UI */}
               <div className="flex gap-1 mt-2 px-1">
                 <div className={`h-1 flex-1 rounded-full ${password.length > 0 ? (password.length > 6 ? 'bg-emerald-500' : 'bg-yellow-500') : 'bg-white/10'}`}></div>
                 <div className={`h-1 flex-1 rounded-full ${password.length > 8 ? 'bg-emerald-500' : 'bg-white/10'}`}></div>

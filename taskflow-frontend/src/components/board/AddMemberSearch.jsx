@@ -30,7 +30,6 @@ function AddMemberSearch({ onAddMember }) {
 
   return (
     <div className="relative group w-full max-w-sm">
-      {/* --- SEARCH INPUT CONTAINER --- */}
       <div className="relative flex items-center">
         <div className="absolute left-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
           {isSearching ? (
@@ -66,7 +65,6 @@ function AddMemberSearch({ onAddMember }) {
                 }}
                 className="flex items-center gap-3 p-3 hover:bg-indigo-50/50 rounded-xl cursor-pointer transition-colors group/item"
               >
-                {/* User Avatar Placeholder */}
                 <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-200 group-hover/item:bg-indigo-600 group-hover/item:text-white transition-colors">
                   {user.name.charAt(0).toUpperCase()}
                 </div>

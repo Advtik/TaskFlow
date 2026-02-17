@@ -4,7 +4,6 @@ import AddMemberSearch from "./AddMemberSearch";
 function BoardHeader({ title, onBack, onShowMembers, onAddMember, members = [] }) {
   return (
     <header className="h-20 border-b bg-white/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
-      {/* LEFT: Navigation & Title */}
       <div className="flex items-center gap-4">
         <button 
           onClick={onBack} 
@@ -23,11 +22,9 @@ function BoardHeader({ title, onBack, onShowMembers, onAddMember, members = [] }
         </div>
       </div>
 
-      {/* RIGHT: Search & Members Toggle */}
       <div className="flex items-center gap-6">
         <AddMemberSearch onAddMember={onAddMember} />
 
-        {/* 🚀 THE FIXED MEMBERS BUTTON */}
         <button
           onClick={onShowMembers}
           className="group flex items-center gap-4 bg-white border border-slate-200 pl-4 pr-5 py-4 rounded-2xl hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/5 transition-all active:scale-95 shrink-0"

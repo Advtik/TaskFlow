@@ -17,7 +17,6 @@ export const createTask = async (req, res, next) => {
       });
     }
 
-    // 1️⃣ Get list to derive board
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -32,7 +31,6 @@ export const createTask = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 2️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -45,7 +43,6 @@ export const createTask = async (req, res, next) => {
       });
     }
 
-    // 3️⃣ Get next position
     const posResult = await query(
       "SELECT COALESCE(MAX(position),0) AS max FROM tasks WHERE list_id = $1",
       [listId]
@@ -53,7 +50,6 @@ export const createTask = async (req, res, next) => {
 
     const newPosition = posResult.rows[0].max + 1;
 
-    // 4️⃣ Insert task
     const result = await query(
       `
       INSERT INTO tasks
@@ -102,7 +98,6 @@ export const getTasksByList = async (req, res, next) => {
     const { listId } = req.params;
     const userId = req.user.id;
 
-    // 1️⃣ Get list
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -117,7 +112,6 @@ export const getTasksByList = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 2️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -130,7 +124,6 @@ export const getTasksByList = async (req, res, next) => {
       });
     }
 
-    // 3️⃣ Fetch tasks ordered
     const tasks = await query(
       `
       SELECT *
@@ -158,7 +151,6 @@ export const updateTask = async (req, res, next) => {
     const { title, description, due_date } = req.body;
     const userId = req.user.id;
 
-    // 1️⃣ Get task
     const taskResult = await query(
       "SELECT * FROM tasks WHERE id = $1",
       [taskId]
@@ -173,7 +165,6 @@ export const updateTask = async (req, res, next) => {
 
     const listId = taskResult.rows[0].list_id;
 
-    // 2️⃣ Get board from list
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -181,7 +172,6 @@ export const updateTask = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 3️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -195,7 +185,6 @@ export const updateTask = async (req, res, next) => {
     }
 
     const task = taskResult.rows[0];
-     // 🔥 Permission check
     if (task.created_by !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -203,7 +192,6 @@ export const updateTask = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Update
     const updated = await query(
       `
       UPDATE tasks
@@ -256,7 +244,6 @@ export const deleteTask = async (req, res, next) => {
     const userId = req.user.id;
 
 
-    // 1️⃣ Get task
     const taskResult = await query(
       "SELECT * FROM tasks WHERE id = $1",
       [taskId]
@@ -271,7 +258,6 @@ export const deleteTask = async (req, res, next) => {
 
     const listId = taskResult.rows[0].list_id;
 
-    // 2️⃣ Get board from list
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -279,7 +265,6 @@ export const deleteTask = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 3️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -292,14 +277,12 @@ export const deleteTask = async (req, res, next) => {
       });
     }
 
-    // Get task title for logging
     const taskInfo = await query(
     "SELECT title FROM tasks WHERE id = $1",
     [taskId]
     );
 
     const task = taskResult.rows[0];
-    // 🔥 Permission check
     if (task.created_by !== userId) {
       return res.status(403).json({
         success: false,
@@ -307,7 +290,6 @@ export const deleteTask = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Delete task
     await query(
       "DELETE FROM tasks WHERE id = $1",
       [taskId]
@@ -359,7 +341,6 @@ export const moveTask = async (req, res, next) => {
 
     await client.query("BEGIN");
 
-    // 1️⃣ Fetch task
     const taskResult = await client.query(
       "SELECT list_id FROM tasks WHERE id = $1",
       [taskId]
@@ -371,7 +352,6 @@ export const moveTask = async (req, res, next) => {
 
     const sourceListId = taskResult.rows[0].list_id;
 
-    // 2️⃣ Get board from source list
     const listResult = await client.query(
       "SELECT board_id FROM lists WHERE id = $1",
       [sourceListId]
@@ -379,7 +359,6 @@ export const moveTask = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 3️⃣ Check membership
     const membership = await client.query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -389,13 +368,11 @@ export const moveTask = async (req, res, next) => {
       throw new Error("Access denied");
     }
 
-    // 4️⃣ Get all tasks from source list (excluding current task)
     const sourceTasks = await client.query(
       "SELECT id FROM tasks WHERE list_id = $1 AND id != $2 ORDER BY position ASC",
       [sourceListId, taskId]
     );
 
-    // Reassign positions in source list
     for (let i = 0; i < sourceTasks.rows.length; i++) {
       await client.query(
         "UPDATE tasks SET position = $1 WHERE id = $2",
@@ -403,7 +380,6 @@ export const moveTask = async (req, res, next) => {
       );
     }
 
-    // 5️⃣ Get tasks in target list
     const targetTasks = await client.query(
       "SELECT id FROM tasks WHERE list_id = $1 ORDER BY position ASC",
       [targetListId]
@@ -411,17 +387,14 @@ export const moveTask = async (req, res, next) => {
 
     const tasksArray = targetTasks.rows.map(t => t.id);
 
-    // Insert moved task into correct position (0-based index)
     const insertIndex = Math.max(0, Math.min(newPosition - 1, tasksArray.length));
     tasksArray.splice(insertIndex, 0, taskId);
 
-    // 6️⃣ Update moved task list_id
     await client.query(
       "UPDATE tasks SET list_id = $1 WHERE id = $2",
       [targetListId, taskId]
     );
 
-    // 7️⃣ Reassign positions in target list
     for (let i = 0; i < tasksArray.length; i++) {
       await client.query(
         "UPDATE tasks SET position = $1 WHERE id = $2",
@@ -480,7 +453,6 @@ export const assignUserToTask = async (req, res, next) => {
       });
     }
 
-    // 1️⃣ Get task
     const taskResult = await query(
       "SELECT list_id FROM tasks WHERE id = $1",
       [taskId]
@@ -495,7 +467,6 @@ export const assignUserToTask = async (req, res, next) => {
 
     const listId = taskResult.rows[0].list_id;
 
-    // 2️⃣ Get board
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -503,7 +474,6 @@ export const assignUserToTask = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 3️⃣ Check current user membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, currentUserId]
@@ -516,7 +486,6 @@ export const assignUserToTask = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Check target user membership
     const targetMembership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -529,7 +498,6 @@ export const assignUserToTask = async (req, res, next) => {
       });
     }
 
-    // 5️⃣ Insert assignment
     await query(
       `
       INSERT INTO task_assignments (task_id, user_id)
@@ -574,7 +542,6 @@ export const removeUserFromTask = async (req, res, next) => {
     const { taskId, userId } = req.params;
     const currentUserId = req.user.id;
 
-    // 1️⃣ Get task
     const taskResult = await query(
       "SELECT list_id FROM tasks WHERE id = $1",
       [taskId]
@@ -589,7 +556,6 @@ export const removeUserFromTask = async (req, res, next) => {
 
     const listId = taskResult.rows[0].list_id;
 
-    // 2️⃣ Get board
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -597,7 +563,6 @@ export const removeUserFromTask = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 3️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, currentUserId]
@@ -610,7 +575,6 @@ export const removeUserFromTask = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Delete assignment
     await query(
       "DELETE FROM task_assignments WHERE task_id = $1 AND user_id = $2",
       [taskId, userId]
@@ -633,7 +597,6 @@ export const getTaskAssignees = async (req, res, next) => {
     const { taskId } = req.params;
     const userId = req.user.id;
 
-    // 1️⃣ Get task
     const taskResult = await query(
       "SELECT list_id FROM tasks WHERE id = $1",
       [taskId]
@@ -648,7 +611,6 @@ export const getTaskAssignees = async (req, res, next) => {
 
     const listId = taskResult.rows[0].list_id;
 
-    // 2️⃣ Get board
     const listResult = await query(
       "SELECT board_id FROM lists WHERE id = $1",
       [listId]
@@ -656,7 +618,6 @@ export const getTaskAssignees = async (req, res, next) => {
 
     const boardId = listResult.rows[0].board_id;
 
-    // 3️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -669,7 +630,6 @@ export const getTaskAssignees = async (req, res, next) => {
       });
     }
 
-    // 4️⃣ Get assignees
     const assignees = await query(
       `
       SELECT u.id, u.name, u.email
@@ -708,7 +668,6 @@ export const searchTasks = async (req, res, next) => {
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
 
-    // 1️⃣ Check membership
     const membership = await query(
       "SELECT id FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -723,7 +682,6 @@ export const searchTasks = async (req, res, next) => {
 
     const searchTerm = `%${searchQuery || ""}%`;
 
-    // 2️⃣ Get total count
     const countResult = await query(
       `
       SELECT COUNT(*) 
@@ -737,7 +695,6 @@ export const searchTasks = async (req, res, next) => {
 
     const total = parseInt(countResult.rows[0].count);
 
-    // 3️⃣ Fetch paginated results
     const tasks = await query(
       `
       SELECT t.*

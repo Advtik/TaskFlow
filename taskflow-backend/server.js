@@ -11,7 +11,6 @@ const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
 
-//Socket.IO server
 export const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL,
@@ -20,7 +19,6 @@ export const io = new Server(server, {
 });
 
 
-// 🔥 Socket connection logic
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -40,7 +38,6 @@ io.on("connection", (socket) => {
 });
 
 
-// Check DB before starting server
 db.query("SELECT NOW()")
   .then(() => {
     console.log("Database connected successfully");

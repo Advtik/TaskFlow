@@ -28,7 +28,6 @@ export const createList = async (req, res, next) => {
       });
     }
 
-    // Find max position in this board
     const positionResult = await query(
       "SELECT COALESCE(MAX(position), 0) AS max FROM lists WHERE board_id = $1",
       [boardId]
@@ -36,7 +35,6 @@ export const createList = async (req, res, next) => {
 
     const newPosition = positionResult.rows[0].max + 1;
 
-    // Insert list
     const result = await query(
       "INSERT INTO lists (board_id, title, position) VALUES ($1,$2,$3) RETURNING *",
       [boardId, title, newPosition]
@@ -44,7 +42,6 @@ export const createList = async (req, res, next) => {
     
      const newList = result.rows[0];
 
-    // ✅ REALTIME EMIT
     io.to(boardId).emit("listCreated", newList);
 
     await logActivity({
@@ -75,7 +72,6 @@ export const getListsByBoard = async (req, res, next) => {
     const { boardId } = req.params;
     const userId = req.user.id;
 
-    // Check membership
     const membership = await query(
       "SELECT * FROM board_members WHERE board_id = $1 AND user_id = $2",
       [boardId, userId]
@@ -121,7 +117,6 @@ export const updateList = async (req, res, next) => {
       });
     }
 
-    // Get list with board_id
     const listResult = await query(
       "SELECT * FROM lists WHERE id = $1",
       [id]
@@ -136,7 +131,6 @@ export const updateList = async (req, res, next) => {
 
     const list = listResult.rows[0];
 
-    // Check membership
     const membership = await query(
       "SELECT * FROM board_members WHERE board_id = $1 AND user_id = $2",
       [list.board_id, userId]
@@ -149,7 +143,6 @@ export const updateList = async (req, res, next) => {
       });
     }
 
-    // Update
     const updated = await query(
       "UPDATE lists SET title = $1 WHERE id = $2 RETURNING *",
       [title, id]
@@ -185,7 +178,6 @@ export const deleteList = async (req, res, next) => {
 
     const list = listResult.rows[0];
 
-    // Check membership
     const membership = await query(
       "SELECT * FROM board_members WHERE board_id = $1 AND user_id = $2",
       [list.board_id, userId]

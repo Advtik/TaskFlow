@@ -21,7 +21,6 @@ export const logActivity = async ({
 
   const activity = result.rows[0];
 
-  // 🔥 Emit to board room
   io.to(boardId).emit("activity:new", activity);
 
   return activity;

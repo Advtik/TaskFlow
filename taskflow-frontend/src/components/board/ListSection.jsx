@@ -21,14 +21,14 @@ export function SortableTask({ task, listId, onOpenTask, onDeleteTask, isOverlay
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.3 : 1, // Make the original semi-transparent
+    opacity: isDragging ? 0.3 : 1, 
   };
 
-  // Overlay style for the item actually following the mouse
+
   const overlayStyle = isOverlay ? {
     cursor: 'grabbing',
     boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-    transform: 'rotate(2deg)', // Slight tilt for professional feel
+    transform: 'rotate(2deg)',
   } : {};
 
   return (
@@ -38,7 +38,6 @@ export function SortableTask({ task, listId, onOpenTask, onDeleteTask, isOverlay
       {...attributes}
       {...listeners}
       onClick={(e) => {
-        // Prevent opening if we were dragging
         if (!isDragging) onOpenTask(task, listId);
       }}
       className={`group border border-slate-200 p-5 rounded-[1.25rem] bg-white flex justify-between items-center transition-shadow active:cursor-grabbing ${
@@ -77,7 +76,6 @@ function ListSection({
 
   return (
     <section className="max-w-4xl mx-auto group/section">
-      {/* Header logic remains same */}
       <div className="flex justify-between items-center mb-5 px-2">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">

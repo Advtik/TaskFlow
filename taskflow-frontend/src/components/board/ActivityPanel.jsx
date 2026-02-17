@@ -30,7 +30,6 @@ function ActivityPanel({ activities }) {
           </div>
         ) : (
           <div className="relative">
-            {/* The Vertical Line for the Timeline */}
             <div className="absolute left-2.5 top-2 bottom-2 w-[1px] bg-slate-100" />
 
             <div className="space-y-8">
@@ -65,7 +64,6 @@ function ActivityPanel({ activities }) {
           </div>
         )}
       </div>
-      {/* Footer Info */}
       <div className="p-4 border-t border-slate-100 bg-slate-50/50">
         <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-tighter">
           Autosync Enabled — {activities.length} total events

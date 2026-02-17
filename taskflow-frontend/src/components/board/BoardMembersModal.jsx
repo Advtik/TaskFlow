@@ -11,7 +11,6 @@ function BoardMembersModal({ members, onClose, onRemove }) {
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
       <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         
-        {/* --- HEADER --- */}
         <div className="p-8 pb-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
@@ -34,7 +33,6 @@ function BoardMembersModal({ members, onClose, onRemove }) {
           </button>
         </div>
 
-        {/* --- MEMBER LIST --- */}
         <div className="p-4 max-h-[400px] overflow-y-auto custom-scrollbar">
           {members.length === 0 ? (
             <div className="py-12 flex flex-col items-center justify-center text-slate-400">
@@ -49,7 +47,6 @@ function BoardMembersModal({ members, onClose, onRemove }) {
                   className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group"
                 >
                   <div className="flex items-center gap-4">
-                    {/* Avatar with initial */}
                     <div className={`w-11 h-11 rounded-full ${getAvatarColor(member.name)} flex items-center justify-center text-white font-black text-sm border-2 border-white shadow-sm`}>
                       {member.name.charAt(0).toUpperCase()}
                     </div>
@@ -57,7 +54,6 @@ function BoardMembersModal({ members, onClose, onRemove }) {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-800 text-sm">{member.name}</span>
-                        {/* Placeholder for role badge */}
                         <div className="flex items-center gap-1 bg-indigo-50 text-indigo-600 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
                           <ShieldCheck size={10} /> {member.role}
                         </div>
@@ -84,7 +80,6 @@ function BoardMembersModal({ members, onClose, onRemove }) {
           )}
         </div>
 
-        {/* --- FOOTER --- */}
         <div className="p-6 bg-slate-50/80 border-t border-slate-100 flex justify-center">
             <button 
                 onClick={onClose}

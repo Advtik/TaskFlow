@@ -13,7 +13,7 @@ function Dashboard() {
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [view, setView] = useState("boards"); // "boards" | "recent"
+  const [view, setView] = useState("boards"); 
 
   useEffect(() => {
     fetchBoards();
@@ -24,7 +24,6 @@ function Dashboard() {
       const res = await api.get("/boards");
       setBoards(res.data.boards);
 
-      // Fetch members for each board
       const membersData = {};
       for (let board of res.data.boards) {
         const memberRes = await api.get(`/boards/${board.id}/members`);
@@ -52,7 +51,7 @@ function Dashboard() {
     }
   };
 
-  // 🔎 Search filtering
+
   const filteredBoards = boards
     .filter(board =>
       board.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -67,7 +66,6 @@ function Dashboard() {
   return (
     <div className="flex min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
 
-      {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col p-6">
         <div className="flex items-center gap-2 mb-10 px-2">
           <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
@@ -108,10 +106,8 @@ function Dashboard() {
         </button>
       </aside>
 
-      {/* MAIN */}
       <main className="flex-1 p-8 lg:p-12">
 
-        {/* HEADER */}
         <header className="flex justify-between items-center mb-10">
           <div>
             <h1 className="text-3xl font-extrabold">
@@ -134,7 +130,6 @@ function Dashboard() {
           </div>
         </header>
 
-        {/* CREATE BOARD */}
         <section className="mb-12">
           <form onSubmit={handleCreateBoard} className="flex gap-3 max-w-md">
             <input
@@ -153,7 +148,6 @@ function Dashboard() {
           </form>
         </section>
 
-        {/* BOARD GRID */}
         <section>
           {filteredBoards.length === 0 && !loading ? (
             <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
@@ -175,7 +169,6 @@ function Dashboard() {
                     Created {new Date(board.created_at).toLocaleDateString()}
                   </p>
 
-                  {/* MEMBERS AVATARS */}
                   <div className="mt-4 flex -space-x-2">
                     {membersMap[board.id]?.slice(0, 3).map(member => (
                       <div

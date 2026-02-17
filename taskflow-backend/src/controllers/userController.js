@@ -12,7 +12,6 @@ export const searchUsers = async (req, res, next) => {
 
     const searchTerm = `%${searchQuery}%`;
 
-    // Total count
     const countResult = await query(
       `
       SELECT COUNT(*) 
@@ -24,7 +23,6 @@ export const searchUsers = async (req, res, next) => {
 
     const total = parseInt(countResult.rows[0].count);
 
-    // Paginated fetch
     const users = await query(
       `
       SELECT id, name, email

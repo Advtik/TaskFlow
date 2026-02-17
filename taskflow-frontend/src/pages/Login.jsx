@@ -30,12 +30,10 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f172a] relative overflow-hidden">
-      {/* Decorative Background Blobs */}
       <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="absolute bottom-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
       <div className="relative z-10 w-full max-w-md px-6">
-        {/* Glassmorphic Card */}
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-2xl shadow-2xl">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-extrabold text-white tracking-tight">Welcome Back</h2>
