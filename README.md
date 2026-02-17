@@ -367,5 +367,7 @@ Future scalability options:
 
 ---
 
-# Author
- - Adwiteek Samadder
+## 👨‍💻 Author
+
+**Adwiteek Samadder**  
+GitHub: [@Advtik](https://github.com/Advtik)
