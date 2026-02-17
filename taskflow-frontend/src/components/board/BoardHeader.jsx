@@ -1,7 +1,8 @@
 import { ChevronLeft, Users, Shield } from "lucide-react";
 import AddMemberSearch from "./AddMemberSearch";
 
-function BoardHeader({ title, onBack, onShowMembers, onAddMember, members = [] }) {
+function BoardHeader({title,onBack,onShowMembers,onAddMember,members = [],searchQuery,onSearch,searchResults,showSearchDropdown,setSelectedTask,setShowSearchDropdown}) {
+
   return (
     <header className="h-20 border-b bg-white/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
       <div className="flex items-center gap-4">
@@ -20,6 +21,60 @@ function BoardHeader({ title, onBack, onShowMembers, onAddMember, members = [] }
             <Shield size={10} /> Private Workspace
           </p>
         </div>
+      </div>
+
+      
+      <div className="relative w-full max-w-md mx-auto my-4">
+        
+        <div className="relative flex items-center group">
+          <div className="absolute left-4 flex items-center pointer-events-none">
+            <svg 
+              className="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Search your tasks..."
+            value={searchQuery}
+            onChange={(e) => onSearch(e.target.value)}
+            
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-base shadow-sm transition-all duration-300 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:shadow-md"
+          />
+        </div>
+
+        {showSearchDropdown && searchQuery.length > 0 && (
+          <div className="absolute top-full mt-3 w-full bg-white shadow-2xl rounded-2xl border border-slate-100 overflow-hidden z-50">
+            <div className="max-h-[400px] overflow-y-auto">
+              {searchResults.length > 0 ? (
+                searchResults.map((task) => (
+                  <div
+                    key={task.id}
+                    onClick={() => {
+                      setSelectedTask({ ...task, listId: task.list_id });
+                      setShowSearchDropdown(false);
+                    }}
+                    className="p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-none transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                      <p className="font-medium text-slate-700">{task.title}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-10 text-center">
+                  <p className="text-slate-400">No results found for "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-6">

@@ -38,6 +38,10 @@ function BoardPage() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [creatingForList, setCreatingForList] = useState(null);
   const [activeTask, setActiveTask] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
 
   const fetchBoardData = useCallback(async () => {
     try {
@@ -308,6 +312,32 @@ socket.off("listDeleted");
     }
   };
 
+  const handleSearch = async (value) => {
+    setSearchQuery(value);
+
+    if (!value.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const res = await api.get(`/tasks/search`, {
+        params: {
+          boardId,
+          query: value,
+          page: 1,
+          limit: 5
+        }
+      });
+
+      setSearchResults(res.data.tasks);
+      setShowSearchDropdown(true);
+    } catch (err) {
+      console.error("Search failed", err);
+    }
+  };
+
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -322,9 +352,17 @@ socket.off("listDeleted");
         title={boardTitle}
         onBack={() => navigate("/dashboard")}
         onShowMembers={() => setShowMembersModal(true)}
-        onAddMember={addMember}   
+        onAddMember={addMember}
         members={members}
+
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
+        searchResults={searchResults}
+        showSearchDropdown={showSearchDropdown}
+        setSelectedTask={setSelectedTask}
+        setShowSearchDropdown={setShowSearchDropdown}
       />
+
 
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 overflow-y-auto px-6 py-10">
