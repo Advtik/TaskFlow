@@ -1,5 +1,5 @@
 import express from "express";
-import authRoutes from "./routes/authroutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import { protect } from "./middlewares/authMiddleware.js";
 import boardRoutes from "./routes/boardRoutes.js";
 import listRoutes from "./routes/listRoutes.js";
